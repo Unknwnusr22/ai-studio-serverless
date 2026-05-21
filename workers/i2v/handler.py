@@ -66,6 +66,18 @@ def load_models():
     from diffusers.models import LTXVideoTransformer3DModel
     from transformers import Gemma3ForConditionalGeneration, AutoTokenizer
 
+    # Bugfix for diffusers >=0.37.0,<=0.38.0 single-file loading TypeError subtraction bug.
+    # In some environments, _get_signature_keys returns optional_kwargs as a list/tuple
+    # which causes set subtraction `- optional_kwargs` to crash with TypeError.
+    orig_get_signature_keys = LTX2ImageToVideoPipeline._get_signature_keys
+    @classmethod
+    def patched_get_signature_keys(cls, obj):
+        expected_modules, optional_kwargs = orig_get_signature_keys(obj)
+        if isinstance(optional_kwargs, (list, tuple)):
+            optional_kwargs = set(optional_kwargs)
+        return expected_modules, optional_kwargs
+    LTX2ImageToVideoPipeline._get_signature_keys = patched_get_signature_keys
+
     model_path = find_model_path()
     gemma_path = find_gemma_path()
 
