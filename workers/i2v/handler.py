@@ -62,7 +62,7 @@ def load_models():
     """Load LTX 2.3 pipeline with abliterated Gemma 3 at container startup."""
     global pipe
 
-    from diffusers import LTX2ImageToVideoPipeline
+    from diffusers import LTX2ImageToVideoPipeline, AutoencoderKLLTXVideo
     from diffusers.models import LTXVideoTransformer3DModel
     from transformers import Gemma3ForConditionalGeneration, AutoTokenizer
 
@@ -78,18 +78,27 @@ def load_models():
     print(f"[i2v] Loading Gemma-3 Tokenizer from {gemma_path}...")
     tokenizer = AutoTokenizer.from_pretrained(gemma_path)
 
-    print("[i2v] Loading LTX-2 Transformer configuration only (to prevent downloading full weights)...")
-    config = LTXVideoTransformer3DModel.load_config(
+    print("[i2v] Loading LTX-2 Transformer configuration only...")
+    transformer_config = LTXVideoTransformer3DModel.load_config(
         "Lightricks/LTX-2",
         subfolder="transformer"
     )
     print("[i2v] Instantiating LTX-2 Transformer from config...")
-    transformer = LTXVideoTransformer3DModel.from_config(config)
+    transformer = LTXVideoTransformer3DModel.from_config(transformer_config)
+
+    print("[i2v] Loading LTX-Video VAE configuration only...")
+    vae_config = AutoencoderKLLTXVideo.load_config(
+        "Lightricks/LTX-Video-0.9.7-dev",
+        subfolder="vae"
+    )
+    print("[i2v] Instantiating LTX-Video VAE from config...")
+    vae = AutoencoderKLLTXVideo.from_config(vae_config)
 
     print(f"[i2v] Loading LTX 2.3 (10Eros) from {model_path}...")
     pipe = LTX2ImageToVideoPipeline.from_single_file(
         model_path,
         transformer=transformer,
+        vae=vae,
         text_encoder=text_encoder,
         tokenizer=tokenizer,
         torch_dtype=torch.bfloat16,
