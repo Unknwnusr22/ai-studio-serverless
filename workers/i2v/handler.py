@@ -78,12 +78,13 @@ def load_models():
     print(f"[i2v] Loading Gemma-3 Tokenizer from {gemma_path}...")
     tokenizer = AutoTokenizer.from_pretrained(gemma_path)
 
-    print("[i2v] Pre-loading LTX-2 Transformer model configuration explicitly to prevent shape mismatch...")
-    transformer = LTXVideoTransformer3DModel.from_pretrained(
+    print("[i2v] Loading LTX-2 Transformer configuration only (to prevent downloading full weights)...")
+    config = LTXVideoTransformer3DModel.load_config(
         "Lightricks/LTX-2",
-        subfolder="transformer",
-        torch_dtype=torch.bfloat16
+        subfolder="transformer"
     )
+    print("[i2v] Instantiating LTX-2 Transformer from config...")
+    transformer = LTXVideoTransformer3DModel.from_config(config)
 
     print(f"[i2v] Loading LTX 2.3 (10Eros) from {model_path}...")
     pipe = LTX2ImageToVideoPipeline.from_single_file(
