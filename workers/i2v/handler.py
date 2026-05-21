@@ -86,8 +86,8 @@ def load_models():
         pretrained_model_name_or_path="Lightricks/LTX-2",
     )
     
-    print("[i2v] Enabling model CPU offload for VRAM management...")
-    pipe.enable_model_cpu_offload()
+    print("[i2v] Moving LTX 2.3 pipeline to GPU (CUDA) for high-speed inference...")
+    pipe.to("cuda")
     print("[i2v] LTX 2.3 loaded and ready.")
 
 
