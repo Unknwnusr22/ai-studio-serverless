@@ -63,6 +63,7 @@ def load_models():
     global pipe
 
     from diffusers import LTX2ImageToVideoPipeline
+    from diffusers.models import LTXVideoTransformer3DModel
     from transformers import Gemma3ForConditionalGeneration, AutoTokenizer
 
     model_path = find_model_path()
@@ -77,9 +78,17 @@ def load_models():
     print(f"[i2v] Loading Gemma-3 Tokenizer from {gemma_path}...")
     tokenizer = AutoTokenizer.from_pretrained(gemma_path)
 
+    print("[i2v] Pre-loading LTX-2 Transformer model configuration explicitly to prevent shape mismatch...")
+    transformer = LTXVideoTransformer3DModel.from_pretrained(
+        "Lightricks/LTX-2",
+        subfolder="transformer",
+        torch_dtype=torch.bfloat16
+    )
+
     print(f"[i2v] Loading LTX 2.3 (10Eros) from {model_path}...")
     pipe = LTX2ImageToVideoPipeline.from_single_file(
         model_path,
+        transformer=transformer,
         text_encoder=text_encoder,
         tokenizer=tokenizer,
         torch_dtype=torch.bfloat16,
