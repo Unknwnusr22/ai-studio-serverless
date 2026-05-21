@@ -1,0 +1,11 @@
+runpod>=1.7.0
+torch>=2.4.0
+diffusers @ git+https://github.com/huggingface/diffusers.git
+transformers>=4.50.0
+accelerate>=0.33.0
+safetensors>=0.4.0
+Pillow>=10.0.0
+imageio>=2.34.0
+imageio-ffmpeg>=0.5.1
+sentencepiece>=0.2.0
+protobuf>=4.25.0

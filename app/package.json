@@ -1,0 +1,22 @@
+{
+  "name": "ai-studio",
+  "version": "1.0.0",
+  "description": "AI-powered image and video generation studio",
+  "main": "index.html",
+  "scripts": {
+    "serve": "npx serve www -l 3000",
+    "cap:add": "npx cap add android",
+    "cap:copy": "npx cap copy android",
+    "cap:open": "npx cap open android",
+    "cap:sync": "npx cap sync android"
+  },
+  "dependencies": {
+    "@capacitor/android": "^6.0.0",
+    "@capacitor/core": "^6.0.0",
+    "@wllama/wllama": "^3.1.1"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^6.0.0",
+    "typescript": "^6.0.3"
+  }
+}

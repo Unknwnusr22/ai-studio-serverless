@@ -1,0 +1,44 @@
+# Node modules (huge, do not push to github)
+node_modules/
+**/node_modules/
+app/node_modules/
+
+# Python cache & virtual environments
+__pycache__/
+**/__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.venv/
+venv/
+env/
+.env
+
+# Android build outputs & local config
+.gradle/
+app/android/.gradle/
+app/android/local.properties
+app/android/app/build/
+app/android/build/
+*.apk
+*.aar
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Large media files or temp files
+*.mp4
+*.png
+*.jpg
+*.jpeg
+*.zip
+*.tar.gz
+*.safetensors
+*.bin
+*.pt
+*.ckpt
+*.onnx
+
+# Capacitor web assets (often rebuilt)
+app/www/
