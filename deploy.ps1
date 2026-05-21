@@ -4,9 +4,9 @@
 $ErrorActionPreference = "Stop"
 
 Clear-Host
-Write-Host "==================================================" -ForegroundColor Cipher
+Write-Host "==================================================" -ForegroundColor Cyan
 Write-Host "   AI Studio - RunPod Serverless Deployer         " -ForegroundColor Green
-Write-Host "==================================================" -ForegroundColor Cipher
+Write-Host "==================================================" -ForegroundColor Cyan
 Write-Host ""
 
 # 1. Check if Docker is running
