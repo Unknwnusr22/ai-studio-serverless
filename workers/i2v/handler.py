@@ -115,6 +115,10 @@ def load_models():
         tokenizer=tokenizer,
         torch_dtype=torch.bfloat16,
         pretrained_model_name_or_path="Lightricks/LTX-2",
+        audio_vae=None,
+        connectors=None,
+        processor=None,
+        vocoder=None,
     )
     
     print("[i2v] Moving LTX 2.3 pipeline to GPU (CUDA) for high-speed inference...")
