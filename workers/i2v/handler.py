@@ -98,13 +98,12 @@ def load_models():
     print("[i2v] Instantiating LTX-2 Transformer from config...")
     transformer = LTXVideoTransformer3DModel.from_config(transformer_config)
 
-    print("[i2v] Loading LTX-Video VAE configuration only...")
-    vae_config = AutoencoderKLLTXVideo.load_config(
+    print("[i2v] Loading LTX-Video VAE from Hugging Face...")
+    vae = AutoencoderKLLTXVideo.from_pretrained(
         "Lightricks/LTX-Video-0.9.7-dev",
-        subfolder="vae"
+        subfolder="vae",
+        torch_dtype=torch.bfloat16
     )
-    print("[i2v] Instantiating LTX-Video VAE from config...")
-    vae = AutoencoderKLLTXVideo.from_config(vae_config)
 
     print(f"[i2v] Loading LTX 2.3 (10Eros) from {model_path}...")
     pipe = LTX2ImageToVideoPipeline.from_single_file(
@@ -125,8 +124,8 @@ def load_models():
     if getattr(pipe, "connectors", None) is None:
         pipe.connectors = lambda *args, **kwargs: (None, None, None)
     
-    print("[i2v] Moving LTX 2.3 pipeline to GPU (CUDA) for high-speed inference...")
-    pipe.to("cuda")
+    print("[i2v] Moving LTX 2.3 pipeline to GPU (CUDA) and enforcing bfloat16...")
+    pipe.to("cuda", torch.bfloat16)
     print("[i2v] LTX 2.3 loaded and ready.")
 
 
