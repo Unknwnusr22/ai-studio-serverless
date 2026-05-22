@@ -121,6 +121,10 @@ def load_models():
         vocoder=None,
     )
     
+    # Bugfix for diffusers LTX2ImageToVideoPipeline __call__ TypeError when connectors is None
+    if getattr(pipe, "connectors", None) is None:
+        pipe.connectors = lambda *args, **kwargs: (None, None, None)
+    
     print("[i2v] Moving LTX 2.3 pipeline to GPU (CUDA) for high-speed inference...")
     pipe.to("cuda")
     print("[i2v] LTX 2.3 loaded and ready.")
