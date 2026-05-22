@@ -17,11 +17,16 @@ try {
     Exit
 }
 
-# 2. Get Docker Hub username
+# 2. Get Docker Hub username and tag version
 $dockerUser = Read-Host "Enter your Docker Hub username (e.g., Unknwnusr22)"
 if ([string]::IsNullOrWhiteSpace($dockerUser)) {
     Write-Host "[!] Docker Hub username cannot be empty." -ForegroundColor Red
     Exit
+}
+
+$tagVersion = Read-Host "Enter the tag version (e.g. latest, v3, v4) [default: v4]"
+if ([string]::IsNullOrWhiteSpace($tagVersion)) {
+    $tagVersion = "v4"
 }
 
 # 3. Choose which worker to deploy
@@ -42,7 +47,7 @@ if ($choice -eq "1" -or $choice -eq "3") {
     Write-Host "--------------------------------------------------" -ForegroundColor Yellow
     
     $i2vPath = Join-Path $root.FullName "workers\i2v"
-    $tag = "$($dockerUser.ToLower())/po-i2v:latest"
+    $tag = "$($dockerUser.ToLower())/po-i2v:$tagVersion"
     
     Write-Host "Building Docker Image: $tag..." -ForegroundColor Cyan
     & docker build -t $tag $i2vPath
@@ -61,7 +66,7 @@ if ($choice -eq "2" -or $choice -eq "3") {
     Write-Host "--------------------------------------------------" -ForegroundColor Yellow
     
     $i2iPath = Join-Path $root.FullName "workers\i2i"
-    $tag = "$($dockerUser.ToLower())/po-i2i:latest"
+    $tag = "$($dockerUser.ToLower())/po-i2i:$tagVersion"
     
     Write-Host "Building Docker Image: $tag..." -ForegroundColor Cyan
     & docker build -t $tag $i2iPath

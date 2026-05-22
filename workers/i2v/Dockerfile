@@ -10,9 +10,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libglib2.0-0 \
     && rm -rf /var/lib/apt/lists/*
 
-# Install PyTorch nightly with native Blackwell sm_120 support
-RUN pip uninstall -y torch && \
-    pip install --no-cache-dir --pre torch --index-url https://download.pytorch.org/whl/nightly/cu128
+# Install PyTorch and torchvision nightly with native Blackwell sm_120 support
+RUN pip uninstall -y torch torchvision && \
+    pip install --no-cache-dir --pre torch torchvision --index-url https://download.pytorch.org/whl/nightly/cu128
+
 
 # Python deps
 COPY requirements.txt .
