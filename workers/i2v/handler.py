@@ -4,11 +4,15 @@ Model loaded from RunPod Network Volume at /workspace/models or /runpod-volume/m
 Swaps standard Gemma 3 text encoder with an abliterated (uncensored) Gemma 3 model.
 """
 
+import os
+# Redirect Hugging Face cache to the persistent RunPod network volume.
+# This caches all tokenizers, VAEs, and Vocoders permanently, making subsequent cold-starts load in 0 seconds!
+os.environ["HF_HOME"] = "/runpod-volume/hf_cache"
+
 import runpod
 import torch
 import base64
 import io
-import os
 import tempfile
 import traceback
 from PIL import Image
