@@ -87,6 +87,34 @@ def load_models():
     from diffusers.pipelines.ltx2.vocoder import LTX2VocoderWithBWE
     from transformers import Gemma3ForConditionalGeneration, AutoTokenizer
 
+    # 1. Check if the pre-assembled/compiled folder exists on the network volume
+    compiled_path = None
+    possible_compiled = [
+        os.path.join(VOLUME_BASE, "10eros_full_pipeline"),
+        "/workspace/models/10eros_full_pipeline",
+        "/runpod-volume/models/10eros_full_pipeline",
+    ]
+    for p in possible_compiled:
+        if os.path.exists(p) and os.path.isdir(p) and os.path.exists(os.path.join(p, "model_index.json")):
+            compiled_path = p
+            break
+
+    if compiled_path:
+        print(f"[i2v] Found pre-assembled pipeline folder at: {compiled_path}")
+        print("[i2v] Loading fully assembled LTX 2.3 pipeline natively in BFloat16...")
+        pipe = LTX2ImageToVideoPipeline.from_pretrained(
+            compiled_path,
+            torch_dtype=torch.bfloat16,
+            low_cpu_mem_usage=False,
+        )
+        print("[i2v] Moving LTX 2.3 pipeline to GPU (CUDA) and enforcing bfloat16...")
+        pipe.to("cuda", torch.bfloat16)
+        print("[i2v] LTX 2.3 loaded and ready instantly from pre-assembled folder.")
+        return
+
+    # 2. Fallback to single-file loading if compiled folder does not exist
+    print("[i2v] Pre-assembled pipeline not found. Falling back to single-file loader...")
+
     # Bugfix for diffusers >=0.37.0,<=0.38.0 single-file loading TypeError subtraction bug.
     # In some environments, _get_signature_keys returns optional_kwargs as a list/tuple
     # which causes set subtraction `- optional_kwargs` to crash with TypeError.
