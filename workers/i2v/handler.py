@@ -62,8 +62,8 @@ def load_models():
     """Load LTX 2.3 pipeline with abliterated Gemma 3 at container startup."""
     global pipe
 
-    from diffusers import LTX2ImageToVideoPipeline, AutoencoderKLLTXVideo
-    from diffusers.models import LTXVideoTransformer3DModel
+    from diffusers import LTX2ImageToVideoPipeline, AutoencoderKLLTX2Video
+    from diffusers.models import LTX2VideoTransformer3DModel
     from transformers import Gemma3ForConditionalGeneration, AutoTokenizer
 
     # Bugfix for diffusers >=0.37.0,<=0.38.0 single-file loading TypeError subtraction bug.
@@ -91,16 +91,16 @@ def load_models():
     tokenizer = AutoTokenizer.from_pretrained(gemma_path)
 
     print("[i2v] Loading LTX-2 Transformer configuration only...")
-    transformer_config = LTXVideoTransformer3DModel.load_config(
+    transformer_config = LTX2VideoTransformer3DModel.load_config(
         "Lightricks/LTX-2",
         subfolder="transformer"
     )
     print("[i2v] Instantiating LTX-2 Transformer from config...")
-    transformer = LTXVideoTransformer3DModel.from_config(transformer_config)
+    transformer = LTX2VideoTransformer3DModel.from_config(transformer_config)
 
-    print("[i2v] Loading LTX-Video VAE from Hugging Face...")
-    vae = AutoencoderKLLTXVideo.from_pretrained(
-        "Lightricks/LTX-Video-0.9.7-dev",
+    print("[i2v] Loading LTX-2 VAE from Hugging Face...")
+    vae = AutoencoderKLLTX2Video.from_pretrained(
+        "Lightricks/LTX-2",
         subfolder="vae",
         torch_dtype=torch.bfloat16
     )
