@@ -128,6 +128,17 @@ def load_models():
         vocoder=None,
     )
     
+    # Bugfix for Diffusers LTX2ImageToVideoPipeline unconditionally decoding audio
+    class DummyAudioVAE:
+        latents_mean = 0.0
+        latents_std = 1.0
+        dtype = torch.bfloat16
+        def decode(self, *args, **kwargs):
+            return [torch.zeros((1, 1, 1))]
+            
+    pipe.audio_vae = DummyAudioVAE()
+    pipe.vocoder = lambda x: None
+
     print("[i2v] Moving LTX 2.3 pipeline to GPU (CUDA) and enforcing bfloat16...")
     pipe.to("cuda", torch.bfloat16)
     print("[i2v] LTX 2.3 loaded and ready.")
