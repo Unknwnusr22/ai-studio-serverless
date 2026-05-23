@@ -62,7 +62,8 @@ def load_models():
     """Load LTX 2.3 pipeline with abliterated Gemma 3 at container startup."""
     global pipe
 
-    from diffusers import LTX2ImageToVideoPipeline, AutoencoderKLLTX2Audio, LTX2VocoderWithBWE
+    from diffusers import LTX2ImageToVideoPipeline, AutoencoderKLLTX2Audio
+    from diffusers.pipelines.ltx2.vocoder import LTX2VocoderWithBWE
     from transformers import Gemma3ForConditionalGeneration, AutoTokenizer
 
     # Bugfix for diffusers >=0.37.0,<=0.38.0 single-file loading TypeError subtraction bug.
