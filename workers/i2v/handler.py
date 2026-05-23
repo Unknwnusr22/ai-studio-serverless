@@ -107,6 +107,17 @@ def load_models():
         torch_dtype=torch.bfloat16
     )
 
+    # Monkeypatch to force LTX-2.3 (Sulphur-2) architecture overrides
+    orig_from_config = LTX2VideoTransformer3DModel.from_config
+    @classmethod
+    def patched_from_config(cls, config, **kwargs):
+        if hasattr(config, "update"):
+            config.update({"cross_attn_mod": True})
+        elif isinstance(config, dict):
+            config["cross_attn_mod"] = True
+        return orig_from_config(config, **kwargs)
+    LTX2VideoTransformer3DModel.from_config = patched_from_config
+
     print(f"[i2v] Loading LTX 2.3 (10Eros) from {model_path}...")
     pipe = LTX2ImageToVideoPipeline.from_single_file(
         model_path,
