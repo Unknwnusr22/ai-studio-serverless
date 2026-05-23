@@ -21,6 +21,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY handler.py .
 
+# Download LTX-2.3 Diffusers config (keeps pristine audio-visual config for 10Eros joint inference)
+RUN hf download diffusers/LTX-2.3-Diffusers --include "*.json" --local-dir /app/config
+
 # RunPod network volume mount point
 VOLUME /runpod-volume
 

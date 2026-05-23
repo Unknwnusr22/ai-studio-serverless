@@ -62,9 +62,7 @@ def load_models():
     """Load LTX 2.3 pipeline with abliterated Gemma 3 at container startup."""
     global pipe
 
-    from diffusers import LTX2ImageToVideoPipeline, AutoencoderKLLTX2Video
-    from diffusers.models import LTX2VideoTransformer3DModel
-    from diffusers.pipelines.ltx2.connectors import LTX2TextConnectors
+    from diffusers import LTX2ImageToVideoPipeline
     from transformers import Gemma3ForConditionalGeneration, AutoTokenizer
 
     # Bugfix for diffusers >=0.37.0,<=0.38.0 single-file loading TypeError subtraction bug.
@@ -91,59 +89,20 @@ def load_models():
     print(f"[i2v] Loading Gemma-3 Tokenizer from {gemma_path}...")
     tokenizer = AutoTokenizer.from_pretrained(gemma_path)
 
-    print("[i2v] Transformer will be built and loaded dynamically from the safetensors file...")
-
-    print("[i2v] Loading LTX-2 VAE from Hugging Face...")
-    vae = AutoencoderKLLTX2Video.from_pretrained(
-        "Lightricks/LTX-2",
-        subfolder="vae",
-        torch_dtype=torch.bfloat16
-    )
-    
-    print("[i2v] Loading LTX-2 Connectors from Hugging Face...")
-    connectors = LTX2TextConnectors.from_pretrained(
-        "Lightricks/LTX-2",
-        subfolder="connectors",
-        torch_dtype=torch.bfloat16
-    )
-
-    print(f"[i2v] Loading LTX 2.3 (10Eros) from {model_path}...")
+    print(f"[i2v] Loading LTX 2.3 (10Eros) from {model_path} with native audio-visual components...")
     pipe = LTX2ImageToVideoPipeline.from_single_file(
         model_path,
-        vae=vae,
         text_encoder=text_encoder,
         tokenizer=tokenizer,
-        connectors=connectors,
         torch_dtype=torch.bfloat16,
-        config="diffusers/LTX-2.3-Diffusers",
-        audio_vae=None,
-        processor=None,
-        vocoder=None,
+        config="/app/config",
+        low_cpu_mem_usage=False,
+        ignore_mismatched_sizes=True,
     )
-    
-    # Bugfix for Diffusers LTX2ImageToVideoPipeline unconditionally decoding audio
-    class DummyAudioConfig:
-        sample_rate = 16000
-        mel_hop_length = 160
-        mel_bins = 64
-        latent_channels = 8
-        
-    class DummyAudioVAE:
-        config = DummyAudioConfig()
-        mel_compression_ratio = 4
-        temporal_compression_ratio = 4
-        latents_mean = torch.tensor([0.0])
-        latents_std = torch.tensor([1.0])
-        dtype = torch.bfloat16
-        def decode(self, *args, **kwargs):
-            return [torch.zeros((1, 1, 1))]
-            
-    pipe.audio_vae = DummyAudioVAE()
-    pipe.vocoder = lambda x: None
 
     print("[i2v] Moving LTX 2.3 pipeline to GPU (CUDA) and enforcing bfloat16...")
     pipe.to("cuda", torch.bfloat16)
-    print("[i2v] LTX 2.3 loaded and ready.")
+    print("[i2v] LTX 2.3 loaded and ready with full audio-visual components.")
 
 
 def decode_base64_image(b64_string):
@@ -154,15 +113,21 @@ def decode_base64_image(b64_string):
     return Image.open(io.BytesIO(image_data)).convert("RGB")
 
 
-def frames_to_mp4_base64(frames, fps=24):
-    """Convert a list of PIL frames or tensor to base64-encoded MP4."""
+def frames_to_mp4_base64(frames, fps=24, audio=None, sampling_rate=16000):
+    """Convert a list of PIL frames or tensor to base64-encoded MP4, optionally with audio."""
     import imageio
+    import wave
+    import subprocess
 
-    with tempfile.NamedTemporaryFile(suffix=".mp4", delete=False) as tmp:
-        tmp_path = tmp.name
+    with tempfile.NamedTemporaryFile(suffix=".mp4", delete=False) as tmp_video:
+        video_path = tmp_video.name
+    
+    audio_path = None
+    output_path = None
 
     try:
-        writer = imageio.get_writer(tmp_path, fps=fps, codec="libx264",
+        # 1. Compile video frames
+        writer = imageio.get_writer(video_path, fps=fps, codec="libx264",
                                      output_params=["-pix_fmt", "yuv420p"])
         for frame in frames:
             if isinstance(frame, Image.Image):
@@ -176,13 +141,72 @@ def frames_to_mp4_base64(frames, fps=24):
                 writer.append_data(np.array(frame))
         writer.close()
 
-        with open(tmp_path, "rb") as f:
+        # 2. If audio is provided, mux them together using ffmpeg
+        if audio is not None:
+            with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmp_audio:
+                audio_path = tmp_audio.name
+            
+            with tempfile.NamedTemporaryFile(suffix=".mp4", delete=False) as tmp_output:
+                output_path = tmp_output.name
+            
+            # Convert audio tensor to 16-bit PCM numpy array
+            if hasattr(audio, "cpu"):
+                audio_arr = audio.float().cpu().numpy()
+            else:
+                audio_arr = audio
+            
+            # Flatten to 1D
+            audio_arr = audio_arr.flatten()
+            
+            # Normalize and convert to int16 PCM
+            if audio_arr.dtype.kind == 'f':
+                audio_arr = np.clip(audio_arr, -1.0, 1.0)
+                audio_pcm = (audio_arr * 32767).astype(np.int16)
+            else:
+                audio_pcm = audio_arr.astype(np.int16)
+            
+            # Write to WAV file using standard library wave module
+            with wave.open(audio_path, 'wb') as wav_file:
+                wav_file.setnchannels(1)
+                wav_file.setsampwidth(2)
+                wav_file.setframerate(sampling_rate)
+                wav_file.writeframes(audio_pcm.tobytes())
+
+            # Mux video and audio with ffmpeg
+            cmd = [
+                "ffmpeg", "-y",
+                "-i", video_path,
+                "-i", audio_path,
+                "-c:v", "copy",
+                "-c:a", "aac",
+                "-map", "0:v:0",
+                "-map", "1:a:0",
+                "-shortest",
+                output_path
+            ]
+            print(f"[i2v] Muxing video and audio with cmd: {' '.join(cmd)}")
+            mux_result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            if mux_result.returncode != 0:
+                print(f"[i2v] ffmpeg error: {mux_result.stderr.decode('utf-8')}")
+                final_path = video_path
+            else:
+                print("[i2v] Synchronized audio-visual muxing successful.")
+                final_path = output_path
+        else:
+            final_path = video_path
+
+        with open(final_path, "rb") as f:
             video_bytes = f.read()
 
         return base64.b64encode(video_bytes).decode("utf-8")
     finally:
-        if os.path.exists(tmp_path):
-            os.unlink(tmp_path)
+        # Clean up temp files
+        for p in [video_path, audio_path, output_path]:
+            if p and os.path.exists(p):
+                try:
+                    os.unlink(p)
+                except Exception:
+                    pass
 
 
 def handler(job):
@@ -242,7 +266,19 @@ def handler(job):
 
         # ── Encode output ──
         frames = result.frames[0]
-        video_b64 = frames_to_mp4_base64(frames, fps=fps)
+        
+        # Check and extract generated audio track
+        audio = None
+        sampling_rate = 16000
+        if getattr(result, "audio", None) is not None and len(result.audio) > 0:
+            audio = result.audio[0]
+            if hasattr(pipe, "vocoder") and hasattr(pipe.vocoder, "config"):
+                sampling_rate = getattr(pipe.vocoder.config, "output_sampling_rate", 16000)
+            print(f"[i2v] Generated audio track found: shape={getattr(audio, 'shape', None)}, rate={sampling_rate}")
+        else:
+            print("[i2v] No generated audio track in model output.")
+
+        video_b64 = frames_to_mp4_base64(frames, fps=fps, audio=audio, sampling_rate=sampling_rate)
 
         duration_sec = round(num_frames / fps, 2)
         return {
