@@ -139,8 +139,8 @@ def load_models():
         config = DummyAudioConfig()
         mel_compression_ratio = 4
         temporal_compression_ratio = 4
-        latents_mean = 0.0
-        latents_std = 1.0
+        latents_mean = torch.tensor([0.0])
+        latents_std = torch.tensor([1.0])
         dtype = torch.bfloat16
         def decode(self, *args, **kwargs):
             return [torch.zeros((1, 1, 1))]
