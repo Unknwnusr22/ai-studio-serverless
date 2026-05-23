@@ -62,7 +62,8 @@ def load_models():
     """Load LTX 2.3 pipeline with abliterated Gemma 3 at container startup."""
     global pipe
 
-    from diffusers import LTX2ImageToVideoPipeline, AutoencoderKLLTX2Audio
+    from diffusers import LTX2ImageToVideoPipeline, AutoencoderKLLTX2Video, AutoencoderKLLTX2Audio
+    from diffusers.pipelines.ltx2.connectors import LTX2TextConnectors
     from diffusers.pipelines.ltx2.vocoder import LTX2VocoderWithBWE
     from transformers import Gemma3ForConditionalGeneration, AutoTokenizer
 
@@ -90,6 +91,20 @@ def load_models():
     print(f"[i2v] Loading Gemma-3 Tokenizer from {gemma_path}...")
     tokenizer = AutoTokenizer.from_pretrained(gemma_path)
 
+    print("[i2v] Loading LTX-2 VAE from Hugging Face...")
+    vae = AutoencoderKLLTX2Video.from_pretrained(
+        "Lightricks/LTX-2",
+        subfolder="vae",
+        torch_dtype=torch.bfloat16
+    )
+    
+    print("[i2v] Loading LTX-2 Connectors from Hugging Face...")
+    connectors = LTX2TextConnectors.from_pretrained(
+        "Lightricks/LTX-2",
+        subfolder="connectors",
+        torch_dtype=torch.bfloat16
+    )
+
     print("[i2v] Loading LTX-2.3 Audio VAE from Hugging Face...")
     audio_vae = AutoencoderKLLTX2Audio.from_pretrained(
         "diffusers/LTX-2.3-Diffusers",
@@ -109,6 +124,8 @@ def load_models():
         model_path,
         text_encoder=text_encoder,
         tokenizer=tokenizer,
+        vae=vae,
+        connectors=connectors,
         audio_vae=audio_vae,
         vocoder=vocoder,
         torch_dtype=torch.bfloat16,
