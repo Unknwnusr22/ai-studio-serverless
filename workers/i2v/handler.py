@@ -62,7 +62,7 @@ def load_models():
     """Load LTX 2.3 pipeline with abliterated Gemma 3 at container startup."""
     global pipe
 
-    from diffusers import LTX2ImageToVideoPipeline
+    from diffusers import LTX2ImageToVideoPipeline, AutoencoderKLLTX2Audio, LTX2VocoderWithBWE
     from transformers import Gemma3ForConditionalGeneration, AutoTokenizer
 
     # Bugfix for diffusers >=0.37.0,<=0.38.0 single-file loading TypeError subtraction bug.
@@ -89,11 +89,27 @@ def load_models():
     print(f"[i2v] Loading Gemma-3 Tokenizer from {gemma_path}...")
     tokenizer = AutoTokenizer.from_pretrained(gemma_path)
 
+    print("[i2v] Loading LTX-2.3 Audio VAE from Hugging Face...")
+    audio_vae = AutoencoderKLLTX2Audio.from_pretrained(
+        "diffusers/LTX-2.3-Diffusers",
+        subfolder="audio_vae",
+        torch_dtype=torch.bfloat16
+    )
+    
+    print("[i2v] Loading LTX-2.3 Audio Vocoder from Hugging Face...")
+    vocoder = LTX2VocoderWithBWE.from_pretrained(
+        "diffusers/LTX-2.3-Diffusers",
+        subfolder="vocoder",
+        torch_dtype=torch.bfloat16
+    )
+
     print(f"[i2v] Loading LTX 2.3 (10Eros) from {model_path} with native audio-visual components...")
     pipe = LTX2ImageToVideoPipeline.from_single_file(
         model_path,
         text_encoder=text_encoder,
         tokenizer=tokenizer,
+        audio_vae=audio_vae,
+        vocoder=vocoder,
         torch_dtype=torch.bfloat16,
         config="/app/config",
         low_cpu_mem_usage=False,
