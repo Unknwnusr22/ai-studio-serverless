@@ -95,16 +95,16 @@ def load_models():
     print(f"[i2v] Loading Gemma-3 Tokenizer from {gemma_path}...")
     tokenizer = AutoTokenizer.from_pretrained(gemma_path)
 
-    print("[i2v] Loading LTX-2 VAE from Hugging Face...")
+    print("[i2v] Loading LTX-2.3 VAE from Hugging Face...")
     vae = AutoencoderKLLTX2Video.from_pretrained(
-        "Lightricks/LTX-2",
+        "diffusers/LTX-2.3-Diffusers",
         subfolder="vae",
         torch_dtype=torch.bfloat16
     )
     
-    print("[i2v] Loading LTX-2 Connectors from Hugging Face...")
+    print("[i2v] Loading LTX-2.3 Connectors from Hugging Face...")
     connectors = LTX2TextConnectors.from_pretrained(
-        "Lightricks/LTX-2",
+        "diffusers/LTX-2.3-Diffusers",
         subfolder="connectors",
         torch_dtype=torch.bfloat16
     )
