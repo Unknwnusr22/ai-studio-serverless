@@ -91,13 +91,7 @@ def load_models():
     print(f"[i2v] Loading Gemma-3 Tokenizer from {gemma_path}...")
     tokenizer = AutoTokenizer.from_pretrained(gemma_path)
 
-    print("[i2v] Loading LTX-2 Transformer configuration only...")
-    transformer_config = LTX2VideoTransformer3DModel.load_config(
-        "Lightricks/LTX-2",
-        subfolder="transformer"
-    )
-    print("[i2v] Instantiating LTX-2 Transformer from config...")
-    transformer = LTX2VideoTransformer3DModel.from_config(transformer_config)
+    print("[i2v] Transformer will be built and loaded dynamically from the safetensors file...")
 
     print("[i2v] Loading LTX-2 VAE from Hugging Face...")
     vae = AutoencoderKLLTX2Video.from_pretrained(
@@ -116,7 +110,6 @@ def load_models():
     print(f"[i2v] Loading LTX 2.3 (10Eros) from {model_path}...")
     pipe = LTX2ImageToVideoPipeline.from_single_file(
         model_path,
-        transformer=transformer,
         vae=vae,
         text_encoder=text_encoder,
         tokenizer=tokenizer,
