@@ -29,13 +29,29 @@ def find_model_path():
         "/workspace/models/ltx2.3-10eros",
         "/runpod-volume/models/ltx2.3-10eros",
     ]
+    preferred_names = [
+        "10Eros_v1-fp8mixed_learned.safetensors",
+        "10eros_v1_bf16.safetensors",
+        "10Eros_v1_fp8_transformer.safetensors",
+    ]
     for base in possible_bases:
-        path = os.path.join(base, "10eros_v1_bf16.safetensors")
-        if os.path.exists(path):
-            print(f"[i2v] Found model checkpoint at: {path}")
-            return path
+        if not os.path.exists(base):
+            continue
+        for name in preferred_names:
+            path = os.path.join(base, name)
+            if os.path.exists(path):
+                print(f"[i2v] Found model checkpoint at: {path}")
+                return path
+        try:
+            for file in os.listdir(base):
+                if file.endswith(".safetensors") and "10eros" in file.lower():
+                    path = os.path.join(base, file)
+                    print(f"[i2v] Found custom model checkpoint at: {path}")
+                    return path
+        except Exception:
+            pass
     # Fallback to default
-    default_path = os.path.join(VOLUME_BASE, "10eros_v1_bf16.safetensors")
+    default_path = os.path.join(VOLUME_BASE, "10Eros_v1-fp8mixed_learned.safetensors")
     print(f"[i2v] Model checkpoint not found in search paths. Using fallback: {default_path}")
     return default_path
 
