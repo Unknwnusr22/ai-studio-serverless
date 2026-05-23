@@ -64,6 +64,7 @@ def load_models():
 
     from diffusers import LTX2ImageToVideoPipeline, AutoencoderKLLTX2Video
     from diffusers.models import LTX2VideoTransformer3DModel
+    from diffusers.pipelines.ltx2.connectors import LTX2TextConnectors
     from transformers import Gemma3ForConditionalGeneration, AutoTokenizer
 
     # Bugfix for diffusers >=0.37.0,<=0.38.0 single-file loading TypeError subtraction bug.
@@ -104,6 +105,13 @@ def load_models():
         subfolder="vae",
         torch_dtype=torch.bfloat16
     )
+    
+    print("[i2v] Loading LTX-2 Connectors from Hugging Face...")
+    connectors = LTX2TextConnectors.from_pretrained(
+        "Lightricks/LTX-2",
+        subfolder="connectors",
+        torch_dtype=torch.bfloat16
+    )
 
     print(f"[i2v] Loading LTX 2.3 (10Eros) from {model_path}...")
     pipe = LTX2ImageToVideoPipeline.from_single_file(
@@ -112,17 +120,13 @@ def load_models():
         vae=vae,
         text_encoder=text_encoder,
         tokenizer=tokenizer,
+        connectors=connectors,
         torch_dtype=torch.bfloat16,
         pretrained_model_name_or_path="Lightricks/LTX-2",
         audio_vae=None,
-        connectors=None,
         processor=None,
         vocoder=None,
     )
-    
-    # Bugfix for diffusers LTX2ImageToVideoPipeline __call__ TypeError when connectors is None
-    if getattr(pipe, "connectors", None) is None:
-        pipe.connectors = lambda *args, **kwargs: (None, None, None)
     
     print("[i2v] Moving LTX 2.3 pipeline to GPU (CUDA) and enforcing bfloat16...")
     pipe.to("cuda", torch.bfloat16)
