@@ -129,7 +129,16 @@ def load_models():
     )
     
     # Bugfix for Diffusers LTX2ImageToVideoPipeline unconditionally decoding audio
+    class DummyAudioConfig:
+        sample_rate = 16000
+        mel_hop_length = 160
+        mel_bins = 64
+        latent_channels = 8
+        
     class DummyAudioVAE:
+        config = DummyAudioConfig()
+        mel_compression_ratio = 4
+        temporal_compression_ratio = 4
         latents_mean = 0.0
         latents_std = 1.0
         dtype = torch.bfloat16
